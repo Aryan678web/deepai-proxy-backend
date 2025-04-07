@@ -1,42 +1,46 @@
-
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
 const axios = require('axios');
-const fs = require('fs');
 const FormData = require('form-data');
 
 const app = express();
-const port = process.env.PORT || 3000;
-
+const upload = multer();
 app.use(cors());
-const upload = multer({ dest: 'uploads/' });
+
+const apiKey = process.env.DEEPAI_API_KEY;
 
 app.post('/convert', upload.single('image'), async (req, res) => {
-    const imagePath = req.file.path;
-
+  try {
     const form = new FormData();
-    form.append('image', fs.createReadStream(imagePath));
+    form.append('image', req.file.buffer, {
+      filename: req.file.originalname,
+      contentType: req.file.mimetype
+    });
 
-    try {
-        const response = await axios.post(
-            'https://api.deepai.org/api/toonify',
-            form,
-            {
-                headers: {
-                    'Api-Key': 'YOUR_API_KEY_HERE',
-                    ...form.getHeaders(),
-                },
-            }
-        );
-        res.json(response.data);
-    } catch (error) {
-        res.status(500).json({ error: 'Conversion failed', details: error.message });
-    } finally {
-        fs.unlinkSync(imagePath);
-    }
+    const response = await axios.post(
+      'https://api.deepai.org/api/toonify',
+      form,
+      {
+        headers: {
+          ...form.getHeaders(),
+          'Api-Key': apiKey,
+        },
+      }
+    );
+
+    res.json(response.data);
+  } catch (error) {
+    console.error(error.response?.data || error.message);
+    res.status(500).json({
+      error: 'Conversion failed',
+      details: error.response?.data || error.message,
+    });
+  }
 });
 
-app.listen(port, () => {
-    console.log(`Server running on port ${port}`);
-});
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});￼Enter
