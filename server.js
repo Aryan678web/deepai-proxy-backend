@@ -13,6 +13,10 @@ const apiKey = process.env.DEEPAI_API_KEY;
 
 app.post('/convert', upload.single('image'), async (req, res) => {
   try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No image file provided.' });
+    }
+
     const form = new FormData();
     form.append('image', req.file.buffer, {
       filename: req.file.originalname,
@@ -43,4 +47,4 @@ app.post('/convert', upload.single('image'), async (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-});
+});￼Enter
